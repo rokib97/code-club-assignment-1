@@ -227,12 +227,8 @@ This will simulate API requests for CRUD operations, and you can test your funct
 
 ### **Submission Instructions:**
 
-1. Implement the `handleRequest` function and the CRUD operations as specified.
-2. Test the functionality of your application with the provided test cases.
-3. Submit your TypeScript code, `db.json`, and any other relevant files.
+1. Implement the handleRequest function and the specified CRUD operations.
+2. Test the functionality of your application using the provided test cases.
+3. Submit your GitHub repository with all the code.
 
 ---
-
-### **Conclusion**
-
-By completing this assignment, you'll have a better understanding of TypeScript’s capabilities when working with data types, interfaces, enums, and making API calls. You'll also gain experience in simulating backend operations using **JSON Server**, allowing you to fully test your CRUD application without needing a real backend.
