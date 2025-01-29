@@ -1,15 +1,16 @@
-# **Assignment: User Management CRUD Application with TypeScript**
+# **Assignment: Advanced User Management CRUD Application with TypeScript**
 
-This assignment will help you practice and demonstrate your understanding of **TypeScript** fundamentals, including **enums**, **interfaces**, **type aliases**, **generic functions**, and **API interactions**. You will build a **User Management CRUD** application by implementing a **generic fetch function** and performing **Create**, **Read**, **Update**, and **Delete** operations on user data.
+This assignment is designed to challenge and enhance your **TypeScript** skills, including working with **enums**, **interfaces**, **type aliases**, **generic functions**, and **error handling**. You will build an advanced **User Management CRUD** application by implementing **complex data validation**, a **generic fetch function**, and performing **Create**, **Read**, **Update**, and **Delete** operations on user data. Additionally, you will integrate a **debounced search feature** and simulate a backend using **JSON Server**.
 
-Additionally, you will simulate a backend using **JSON Server** to store and retrieve user data.
+---
 
 ## **Assignment Structure**
 
-1. **Part 1:** Implement a generic `handleRequest` function to simulate HTTP requests.
-2. **Part 2:** Implement the CRUD operations for user management.
-3. **Part 3:** Test the CRUD functions with mock data.
+1. **Part 1:** Implement a robust `handleRequest` function to simulate HTTP requests.
+2. **Part 2:** Implement the CRUD operations for user management, including additional data validation.
+3. **Part 3:** Add a **search feature** with debounced input.
 4. **Part 4:** Set up a simulated backend using JSON Server.
+5. **Part 5:** Implement error handling for edge cases and simulate failure scenarios.
 
 ---
 
@@ -19,13 +20,14 @@ Additionally, you will simulate a backend using **JSON Server** to store and ret
 
 1. Define a generic function `handleRequest` that:
 
-   - Accepts a URL, HTTP method, and an optional request body.
+   - Accepts a `url`, HTTP `method`, optional `headers`, and an optional `request body`.
    - Returns a `Response` object containing:
-     - `success` (boolean): Indicates whether the request was successful.
-     - `data` (of type `T`): Contains the response data.
-     - `message` (optional): Contains an error message if the request failed.
+     - `success` (boolean): Indicates if the request was successful.
+     - `data` (of type `T` | `null`): Contains the response data or null if the request failed.
+     - `message` (string): Contains an error message if the request failed.
 
-2. The `handleRequest` function should handle different HTTP methods (`GET`, `POST`, `PUT`, `DELETE`).
+2. Include **timeout handling** to simulate network delays (e.g., 2 seconds).
+3. Throw an error if the request fails due to network or server issues.
 
 ### **Function Signature**
 
@@ -33,6 +35,7 @@ Additionally, you will simulate a backend using **JSON Server** to store and ret
 async function handleRequest<T>(
   url: string,
   method: "GET" | "POST" | "PUT" | "DELETE",
+  headers?: Record<string, string>,
   body?: T
 ): Promise<Response<T>>;
 ```
@@ -43,77 +46,95 @@ async function handleRequest<T>(
 
 ### **Requirements**
 
-1. Define the `Role` enum:
+1. Define a `Role` enum and a `User` interface:
 
    ```typescript
    enum Role {
      Admin = "admin",
      User = "user",
+     Guest = "guest",
    }
-   ```
 
-2. Define the `User` interface:
-
-   ```typescript
    interface User {
      id: number;
      name: string;
      email: string;
      role: Role;
+     createdAt: string;
+   }
+
+   interface Response<T> {
+     success: boolean;
+     data: T | null;
+     message: string;
    }
    ```
 
-3. Implement the following CRUD operations:
+2. Implement the following CRUD operations:
 
    - **Create a new user**:
+
+     - Validate that the `email` is unique and properly formatted using regex.
+     - Validate that `role` is one of the allowed `Role` values.
+
      ```typescript
-     async function createUser(user: User): Promise<User>;
+     async function createUser(
+       user: Omit<User, "id" | "createdAt">
+     ): Promise<User>;
      ```
+
    - **Get all users**:
+
+     - Support filtering by `role` using query parameters.
+
      ```typescript
-     async function getUsers(): Promise<User[]>;
+     async function getUsers(roleFilter?: Role): Promise<User[]>;
      ```
+
    - **Update an existing user**:
+
+     - Allow updating only specific fields using a `Partial<User>` type.
+     - Throw an error if the user ID does not exist.
+
      ```typescript
      async function updateUser(
        id: number,
-       updatedUser: Partial<User>
+       updatedUser: Partial<Omit<User, "id" | "createdAt">>
      ): Promise<User | null>;
      ```
+
    - **Delete a user by ID**:
+     - Simulate a confirmation step before deletion.
      ```typescript
      async function deleteUser(id: number): Promise<boolean>;
      ```
 
-4. Each function should use `handleRequest` for API interactions.
+3. Each function must use `handleRequest` and implement error handling for:
+   - Network issues.
+   - Invalid data input.
+   - Nonexistent user IDs.
 
 ---
 
-## **Part 3: Testing the CRUD Functions**
+## **Part 3: Adding a Search Feature**
 
-### **Sample Tests**
+### **Requirements**
 
-```typescript
-const newUser = await createUser({
-  id: 1,
-  name: "John Doe",
-  email: "john@example.com",
-  role: Role.Admin,
-});
-console.log(newUser);
+1. Implement a **debounced search** for filtering users by `name` or `email`.
+2. Create a `searchUsers` function:
+   ```typescript
+   async function searchUsers(query: string): Promise<User[]>;
+   ```
+3. Implement the debounce logic in a `utils` function:
 
-const users = await getUsers();
-console.log(users);
+   ```typescript
+   function debounce<T extends (...args: any[]) => void>(
+     func: T,
+     delay: number
+   ): (...args: Parameters<T>) => void;
+   ```
 
-const updatedUser = await updateUser(1, {
-  name: "Johnathan Doe",
-  role: Role.User,
-});
-console.log(updatedUser);
-
-const deleteSuccess = await deleteUser(1);
-console.log(deleteSuccess);
-```
+4. Test the search functionality with multiple users in the database.
 
 ---
 
@@ -129,7 +150,7 @@ npm install json-server typescript
 
 #### **Step 2: Set Up `db.json`**
 
-Create a `db.json` file to simulate a user database:
+Create a `db.json` file to simulate the database with extended fields:
 
 ```json
 {
@@ -138,7 +159,15 @@ Create a `db.json` file to simulate a user database:
       "id": 1,
       "name": "John Doe",
       "email": "john.doe@example.com",
-      "role": "admin"
+      "role": "admin",
+      "createdAt": "2025-01-01T12:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "role": "user",
+      "createdAt": "2025-01-02T12:00:00.000Z"
     }
   ]
 }
@@ -146,33 +175,39 @@ Create a `db.json` file to simulate a user database:
 
 #### **Step 3: Configure `package.json`**
 
+Add the following scripts:
+
 ```json
-{
-  "name": "user-management-crud",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "json-server --watch db.json --port 5000",
-    "start": "tsc && node dist/index.js"
-  },
-  "dependencies": {
-    "json-server": "^0.16.3"
-  },
-  "devDependencies": {
-    "typescript": "^4.5.4"
-  }
+"scripts": {
+  "dev": "json-server --watch db.json --port 5000",
+  "start": "tsc && node dist/index.js"
 }
 ```
 
-#### **Step 4: Run the Application**
+---
 
-1. Start **JSON Server**:
-   ```bash
-   npm run dev
+## **Part 5: Error Handling**
+
+### **Requirements**
+
+1. Handle the following edge cases:
+
+   - **Network errors**: Simulate timeouts in `handleRequest`.
+   - **Duplicate email validation** during `createUser`.
+   - **Nonexistent user** during `updateUser` or `deleteUser`.
+
+2. Update the `Response` interface to include detailed error information:
+
+   ```typescript
+   interface Response<T> {
+     success: boolean;
+     data: T | null;
+     message: string;
+     errorCode?: string;
+   }
    ```
-2. Compile and run the TypeScript code:
-   ```bash
-   npm start
-   ```
+
+3. Test the error handling by simulating failures.
 
 ---
 
@@ -185,9 +220,10 @@ Create a `db.json` file to simulate a user database:
 │   ├── /models
 │   │   └── user.ts       # Define Role enum, User interface, and Response interface
 │   ├── /utils
-│   │   └── api.ts        # Implement the handleRequest function
-│   └── index.ts          # Main file to test the CRUD operations
-├── db.json               # Simulated data for JSON Server (mock backend)
+│   │   ├── api.ts        # Implement the handleRequest function
+│   │   └── debounce.ts   # Implement debounce logic
+│   └── index.ts          # Main file to test the CRUD operations and search feature
+├── db.json               # Simulated backend data
 ├── package.json          # Project dependencies and scripts
 └── README.md             # Documentation
 ```
@@ -196,8 +232,8 @@ Create a `db.json` file to simulate a user database:
 
 ## **Submission Instructions**
 
-1. Implement the `handleRequest` function and the CRUD operations.
-2. Test your application using the provided test cases.
-3. Submit your GitHub repository with all the code.
+1. Complete all parts of the assignment.
+2. Submit a GitHub repository with your code, including test cases.
+3. Include a `README.md` file with setup and usage instructions.
 
----
+Good luck and happy coding! 🚀
